@@ -73,7 +73,11 @@ jobs:
         run: mvn --batch-mode -pl banner-processor -am clean package
       - name: Deploy EKS workloads and web edge
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gettext-base
+          # ubuntu-latest already ships gettext/envsubst. Avoid an unconditional
+          # apt mirror refresh, which can hang the deployment runner.
+          if ! command -v envsubst >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y gettext-base
+          fi
           chmod +x scripts/deploy-production.sh
           scripts/deploy-production.sh
