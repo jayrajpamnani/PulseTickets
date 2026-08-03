@@ -9,6 +9,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @Configuration
 class AdminBootstrap {
   @Bean CommandLineRunner bootstrapAdmin(UserRepository users,@Value("${app.admin.username:}") String username,@Value("${app.admin.email:}") String email,@Value("${app.admin.password:}") String password){
-    return args -> { if(!username.isBlank()&&!password.isBlank()&&users.findByUsername(username).isEmpty()){User admin=new User(username,email.isBlank()?username+"@example.com":email,new BCryptPasswordEncoder().encode(password));admin.role="ADMIN";users.save(admin);} };
+    return args -> {
+      if (username.isBlank() || password.isBlank()) return;
+      User admin = users.findByUsername(username).orElseGet(() ->
+          new User(username, email.isBlank() ? username + "@example.com" : email, password));
+      admin.passwordHash = new BCryptPasswordEncoder().encode(password);
+      admin.role = "ADMIN";
+      users.save(admin);
+    };
   }
 }

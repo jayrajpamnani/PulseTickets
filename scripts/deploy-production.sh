@@ -44,7 +44,9 @@ kubectl -n "$NAMESPACE" create secret generic platform-secrets \
   --dry-run=client -o yaml | kubectl apply -f -
 
 envsubst < "$ROOT/k8s/production.yaml" | kubectl apply -f -
+kubectl -n "$NAMESPACE" rollout restart deployment/user-service
 kubectl -n "$NAMESPACE" rollout status deployment/api-gateway --timeout=10m
+kubectl -n "$NAMESPACE" rollout status deployment/user-service --timeout=10m
 
 for attempt in {1..30}; do
   API_ORIGIN="$(kubectl -n "$NAMESPACE" get service api-gateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
