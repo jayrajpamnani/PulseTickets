@@ -34,7 +34,7 @@ export class AppComponent {
   }
 
   private signInDemo(credentials: { username: string; email: string; password: string }) {
-    this.http.post<any>('/api/auth/login', credentials).subscribe({
+    this.http.post<any>('/api/auth/login', { username: credentials.username, password: credentials.password }).subscribe({
       next: response => {
         localStorage.setItem('token', response.token);
         this.token.set(response.token);
