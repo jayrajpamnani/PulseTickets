@@ -6,7 +6,9 @@ Cloud-native event-ticketing platform built with Java 21, Spring Boot, Angular, 
 
 1. Copy `.env.example` to `.env` and set `JWT_SECRET` to a base64-encoded 32-byte value.
 2. Run `docker compose up --build`.
-3. Open `http://localhost:5173`. The gateway is at `http://localhost:8080`.
+3. Open `http://localhost:4200`. The gateway is at `http://localhost:8080`.
+
+For Angular development outside Docker, `npm start` proxies `/api` requests to the local gateway on port 8080.
 
 The compose stack runs PostgreSQL (one database per service), Kafka, the configuration server, gateway, user, event, ticket, payment, notification, analytics, and the web app.
 
