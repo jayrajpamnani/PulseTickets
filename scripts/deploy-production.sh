@@ -47,6 +47,11 @@ envsubst < "$ROOT/k8s/production.yaml" | kubectl apply -f -
 kubectl -n "$NAMESPACE" rollout restart deployment/user-service
 kubectl -n "$NAMESPACE" rollout status deployment/api-gateway --timeout=10m
 kubectl -n "$NAMESPACE" rollout status deployment/user-service --timeout=10m
+kubectl -n "$NAMESPACE" rollout status deployment/event-service --timeout=10m
+kubectl -n "$NAMESPACE" rollout status deployment/ticket-service --timeout=10m
+kubectl -n "$NAMESPACE" rollout status deployment/payment-service --timeout=10m
+kubectl -n "$NAMESPACE" rollout status deployment/notification-service --timeout=10m
+kubectl -n "$NAMESPACE" rollout status deployment/analytics-service --timeout=10m
 
 for attempt in {1..30}; do
   API_ORIGIN="$(kubectl -n "$NAMESPACE" get service api-gateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"

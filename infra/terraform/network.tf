@@ -135,7 +135,11 @@ resource "aws_security_group" "database" {
     protocol  = "tcp"
     # Managed EKS nodes currently receive the cluster security group. Keep the
     # node SG as well so either supported node networking layout can reach RDS.
-    security_groups = [aws_security_group.eks_nodes.id, aws_security_group.eks_cluster.id]
+    security_groups = [
+      aws_security_group.eks_nodes.id,
+      aws_security_group.eks_cluster.id,
+      aws_eks_cluster.platform.vpc_config[0].cluster_security_group_id,
+    ]
   }
   tags = local.tags
 }
@@ -145,10 +149,13 @@ resource "aws_security_group" "kafka" {
   description = "Kafka access from EKS only"
   vpc_id      = aws_vpc.platform.id
   ingress {
-    from_port       = 9098
-    to_port         = 9098
-    protocol        = "tcp"
-    security_groups = [aws_security_group.eks_nodes.id]
+    from_port = 9092
+    to_port   = 9092
+    protocol  = "tcp"
+    security_groups = [
+      aws_security_group.eks_nodes.id,
+      aws_eks_cluster.platform.vpc_config[0].cluster_security_group_id,
+    ]
   }
   tags = local.tags
 }
