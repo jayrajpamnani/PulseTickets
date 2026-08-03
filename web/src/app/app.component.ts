@@ -22,22 +22,27 @@ export class AppComponent {
     });
   }
 
-  login() {
+  async login() {
     const credentials = { username: 'demo', email: 'demo@pulsetickets.local', password: 'DemoPass123' };
-    this.http.post<any>('/api/auth/register', credentials).subscribe({
-      next: response => this.completeSignIn(response.token),
-      error: response => {
-        if (response.status === 409) this.signInDemo(credentials);
-        else this.error.set('Demo sign-in is currently unavailable.');
+    try {
+      let response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username: credentials.username, password: credentials.password })
+      });
+      if (!response.ok) {
+        response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(credentials)
+        });
       }
-    });
-  }
-
-  private signInDemo(credentials: { username: string; email: string; password: string }) {
-    this.http.post<any>('/api/auth/login', { username: credentials.username, password: credentials.password }).subscribe({
-      next: response => this.completeSignIn(response.token),
-      error: () => this.error.set('Demo sign-in is currently unavailable.')
-    });
+      if (!response.ok) throw new Error('Demo authentication failed');
+      const body = await response.json();
+      this.completeSignIn(body.token);
+    } catch {
+      this.error.set('Demo sign-in is currently unavailable.');
+    }
   }
 
   private completeSignIn(token: string) {
