@@ -1,0 +1,14 @@
+.DS_Store
+**/target/
+**/node_modules/
+**/.angular/
+**/.env
+*.iml
+.idea/
+.agents/
+skills-lock.json
+.terraform/
+*.tfstate*
+infra/terraform/terraform.tfvars
+infra/terraform/tfplan
+*.tfplan

@@ -1,0 +1,1 @@
+CREATE TABLE reservations (id BIGSERIAL PRIMARY KEY,username VARCHAR(80) NOT NULL,event_id BIGINT NOT NULL,quantity INTEGER NOT NULL CHECK(quantity>0),total_price NUMERIC(12,2) NOT NULL,status VARCHAR(16) NOT NULL CHECK(status IN ('PENDING','PAID','CANCELLED')),created_at TIMESTAMPTZ NOT NULL DEFAULT now()); CREATE INDEX idx_reservations_username ON reservations(username);

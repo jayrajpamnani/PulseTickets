@@ -1,0 +1,11 @@
+package com.antra.event;
+import jakarta.validation.Valid; import jakarta.validation.constraints.*; import java.math.BigDecimal; import java.time.Instant; import org.springframework.data.domain.*; import org.springframework.http.*; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.transaction.annotation.Transactional; import org.springframework.web.bind.annotation.*; import org.springframework.web.server.ResponseStatusException;
+@RestController @RequestMapping("/api/events") public class EventController { private final EventRepository events; EventController(EventRepository events){this.events=events;}
+ @GetMapping public Page<Event> list(@RequestParam(defaultValue="") String keyword,@RequestParam(defaultValue="0") int page){return events.findByTitleContainingIgnoreCase(keyword,PageRequest.of(page,20,Sort.by("startsAt")));}
+ @GetMapping("/{id}") public Event one(@PathVariable Long id){return events.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));}
+ @PostMapping @PreAuthorize("hasRole('ADMIN')") ResponseEntity<Event> create(@Valid @RequestBody Create c){return ResponseEntity.status(201).body(events.save(new Event(c)));}
+ @PutMapping("/{id}") @PreAuthorize("hasRole('ADMIN')") Event update(@PathVariable Long id,@Valid @RequestBody Create c){Event e=one(id); e.title=c.title;e.venue=c.venue;e.startsAt=c.startsAt;e.price=c.price;e.description=c.description;return events.save(e);}
+ @PostMapping("/{id}/reserve") @PreAuthorize("hasAnyRole('USER','ADMIN')") @Transactional public Reservation reserve(@PathVariable Long id,@RequestParam @Min(1) int quantity){Event e=one(id);if(e.availableTickets<quantity)throw new ResponseStatusException(HttpStatus.CONFLICT,"Insufficient tickets");e.availableTickets-=quantity;return new Reservation(e.id,e.title,e.price,quantity);}
+ @PostMapping("/{id}/release") @PreAuthorize("hasRole('ADMIN')") @Transactional void release(@PathVariable Long id,@RequestParam int quantity){Event e=one(id);e.availableTickets=Math.min(e.capacity,e.availableTickets+quantity);}
+ record Create(@NotBlank String title,@NotBlank String venue,@Future Instant startsAt,@NotNull @DecimalMin("0.01") BigDecimal price,@Min(1) int capacity,String description){} record Reservation(Long eventId,String title,BigDecimal unitPrice,int quantity){}
+}

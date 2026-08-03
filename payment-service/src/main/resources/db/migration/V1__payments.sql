@@ -1,0 +1,1 @@
+CREATE TABLE payments (id BIGSERIAL PRIMARY KEY,reservation_id BIGINT UNIQUE NOT NULL,username VARCHAR(80) NOT NULL,amount NUMERIC(12,2) NOT NULL,status VARCHAR(16) NOT NULL CHECK(status IN ('SUCCESS','FAILED')),paid_at TIMESTAMPTZ); CREATE INDEX idx_payments_username ON payments(username);

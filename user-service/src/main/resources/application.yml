@@ -1,0 +1,13 @@
+server: { port: 8081 }
+spring:
+  config: { import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}" }
+  application: { name: user-service }
+  datasource: { url: "${DATABASE_URL:jdbc:postgresql://localhost:5433/users}", username: "${DATABASE_USER:postgres}", password: "${DATABASE_PASSWORD:postgres}" }
+  jpa: { hibernate: { ddl-auto: validate } }
+management: { endpoints: { web: { exposure: { include: health,info,prometheus } } } }
+app:
+  jwt: { secret: "${JWT_SECRET:change-me-change-me-change-me-change-me}" }
+  admin:
+    username: "${ADMIN_USERNAME:}"
+    email: "${ADMIN_EMAIL:}"
+    password: "${ADMIN_PASSWORD:}"

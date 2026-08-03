@@ -1,0 +1,5 @@
+server: { port: 8086 }
+spring:
+  config: { import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}" }
+  kafka: { bootstrap-servers: "${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}", consumer: { auto-offset-reset: earliest } }
+management: { endpoints: { web: { exposure: { include: health,info,prometheus } } } }

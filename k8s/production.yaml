@@ -1,0 +1,216 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pulse-tickets
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-config
+  namespace: pulse-tickets
+data:
+  SPRING_PROFILES_ACTIVE: prod
+  AWS_REGION: ${AWS_REGION}
+  AWS_S3_BUCKET: ${BANNER_BUCKET}
+  AWS_BANNER_PUBLIC_URL: ${BANNER_CDN_URL}
+  KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+  USER_SERVICE_URL: http://user-service:8081
+  EVENT_SERVICE_URL: http://event-service:8082
+  TICKET_SERVICE_URL: http://ticket-service:8083
+  PAYMENT_SERVICE_URL: http://payment-service:8084
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: event-service
+  namespace: pulse-tickets
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: config-server, namespace: pulse-tickets }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: config-server } }
+  template:
+    metadata: { labels: { app: config-server } }
+    spec:
+      containers:
+        - name: config-server
+          image: ${ECR_REGISTRY}/pulse-tickets/config-server:${IMAGE_TAG}
+          ports: [{ containerPort: 8888 }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8888 }, initialDelaySeconds: 15 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8888 }, initialDelaySeconds: 30 }
+          resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { cpu: 500m, memory: 512Mi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: config-server, namespace: pulse-tickets }
+spec: { selector: { app: config-server }, ports: [{ port: 8888, targetPort: 8888 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: user-service, namespace: pulse-tickets }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: user-service } }
+  template:
+    metadata: { labels: { app: user-service } }
+    spec:
+      containers:
+        - name: user-service
+          image: ${ECR_REGISTRY}/pulse-tickets/user-service:${IMAGE_TAG}
+          ports: [{ containerPort: 8081 }]
+          envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
+          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${USERS_DB_ENDPOINT}:5432/users }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_USERS } } }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8081 }, initialDelaySeconds: 25 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8081 }, initialDelaySeconds: 45 }
+          resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: user-service, namespace: pulse-tickets }
+spec: { selector: { app: user-service }, ports: [{ port: 8081, targetPort: 8081 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: event-service, namespace: pulse-tickets }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: event-service } }
+  template:
+    metadata: { labels: { app: event-service } }
+    spec:
+      serviceAccountName: event-service
+      containers:
+        - name: event-service
+          image: ${ECR_REGISTRY}/pulse-tickets/event-service:${IMAGE_TAG}
+          ports: [{ containerPort: 8082 }]
+          envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
+          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${EVENTS_DB_ENDPOINT}:5432/events }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_EVENTS } } }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8082 }, initialDelaySeconds: 25 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8082 }, initialDelaySeconds: 45 }
+          resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: event-service, namespace: pulse-tickets }
+spec: { selector: { app: event-service }, ports: [{ port: 8082, targetPort: 8082 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: ticket-service, namespace: pulse-tickets }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: ticket-service } }
+  template:
+    metadata: { labels: { app: ticket-service } }
+    spec:
+      containers:
+        - name: ticket-service
+          image: ${ECR_REGISTRY}/pulse-tickets/ticket-service:${IMAGE_TAG}
+          ports: [{ containerPort: 8083 }]
+          envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
+          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${TICKETS_DB_ENDPOINT}:5432/tickets }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_TICKETS } } }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8083 }, initialDelaySeconds: 25 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8083 }, initialDelaySeconds: 45 }
+          resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: ticket-service, namespace: pulse-tickets }
+spec: { selector: { app: ticket-service }, ports: [{ port: 8083, targetPort: 8083 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: payment-service, namespace: pulse-tickets }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: payment-service } }
+  template:
+    metadata: { labels: { app: payment-service } }
+    spec:
+      containers:
+        - name: payment-service
+          image: ${ECR_REGISTRY}/pulse-tickets/payment-service:${IMAGE_TAG}
+          ports: [{ containerPort: 8084 }]
+          envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
+          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${PAYMENTS_DB_ENDPOINT}:5432/payments }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_PAYMENTS } } }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8084 }, initialDelaySeconds: 25 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8084 }, initialDelaySeconds: 45 }
+          resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: payment-service, namespace: pulse-tickets }
+spec: { selector: { app: payment-service }, ports: [{ port: 8084, targetPort: 8084 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: notification-service, namespace: pulse-tickets }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: notification-service } }
+  template:
+    metadata: { labels: { app: notification-service } }
+    spec:
+      containers:
+        - name: notification-service
+          image: ${ECR_REGISTRY}/pulse-tickets/notification-service:${IMAGE_TAG}
+          ports: [{ containerPort: 8085 }]
+          envFrom: [{ configMapRef: { name: platform-config } }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8085 }, initialDelaySeconds: 20 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8085 }, initialDelaySeconds: 40 }
+          resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { cpu: 500m, memory: 512Mi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: analytics-service, namespace: pulse-tickets }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: analytics-service } }
+  template:
+    metadata: { labels: { app: analytics-service } }
+    spec:
+      containers:
+        - name: analytics-service
+          image: ${ECR_REGISTRY}/pulse-tickets/analytics-service:${IMAGE_TAG}
+          ports: [{ containerPort: 8086 }]
+          envFrom: [{ configMapRef: { name: platform-config } }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8086 }, initialDelaySeconds: 20 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8086 }, initialDelaySeconds: 40 }
+          resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { cpu: 500m, memory: 512Mi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api-gateway, namespace: pulse-tickets }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: api-gateway } }
+  template:
+    metadata: { labels: { app: api-gateway } }
+    spec:
+      containers:
+        - name: api-gateway
+          image: ${ECR_REGISTRY}/pulse-tickets/api-gateway:${IMAGE_TAG}
+          ports: [{ containerPort: 8080 }]
+          envFrom: [{ configMapRef: { name: platform-config } }]
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8080 }, initialDelaySeconds: 20 }
+          livenessProbe: { httpGet: { path: /actuator/health, port: 8080 }, initialDelaySeconds: 40 }
+          resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: pulse-tickets
+  annotations: { service.beta.kubernetes.io/aws-load-balancer-type: external, service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing }
+spec: { selector: { app: api-gateway }, type: LoadBalancer, ports: [{ port: 80, targetPort: 8080 }] }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: event-service, namespace: pulse-tickets }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: event-service }
+  minReplicas: 1
+  maxReplicas: 4
+  metrics: [{ type: Resource, resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } } }]

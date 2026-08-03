@@ -1,0 +1,13 @@
+server: { port: 8082 }
+spring:
+  config: { import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}" }
+  application: { name: event-service }
+  datasource: { url: "${DATABASE_URL:jdbc:postgresql://localhost:5434/events}", username: "${DATABASE_USER:postgres}", password: "${DATABASE_PASSWORD:postgres}" }
+  jpa: { hibernate: { ddl-auto: validate } }
+management: { endpoints: { web: { exposure: { include: health,info,prometheus } } } }
+app:
+  jwt: { secret: "${JWT_SECRET:change-me-change-me-change-me-change-me}" }
+  banner:
+    bucket: "${AWS_S3_BUCKET:}"
+    region: "${AWS_REGION:us-east-1}"
+    public-base-url: "${AWS_BANNER_PUBLIC_URL:}"

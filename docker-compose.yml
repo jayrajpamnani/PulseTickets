@@ -1,0 +1,25 @@
+services:
+  kafka:
+    image: bitnami/kafka:3.8
+    environment:
+      KAFKA_CFG_NODE_ID: '0'
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+  users-db: { image: 'postgres:16-alpine', environment: { POSTGRES_DB: users, POSTGRES_PASSWORD: postgres } }
+  events-db: { image: 'postgres:16-alpine', environment: { POSTGRES_DB: events, POSTGRES_PASSWORD: postgres } }
+  tickets-db: { image: 'postgres:16-alpine', environment: { POSTGRES_DB: tickets, POSTGRES_PASSWORD: postgres } }
+  payments-db: { image: 'postgres:16-alpine', environment: { POSTGRES_DB: payments, POSTGRES_PASSWORD: postgres } }
+  user-service: { build: { context: ., dockerfile: user-service/Dockerfile }, environment: { DATABASE_URL: 'jdbc:postgresql://users-db:5432/users', JWT_SECRET: '${JWT_SECRET}', ADMIN_USERNAME: '${ADMIN_USERNAME}', ADMIN_EMAIL: '${ADMIN_EMAIL}', ADMIN_PASSWORD: '${ADMIN_PASSWORD}' }, depends_on: [users-db] }
+  event-service: { build: { context: ., dockerfile: event-service/Dockerfile }, environment: { DATABASE_URL: 'jdbc:postgresql://events-db:5432/events', JWT_SECRET: '${JWT_SECRET}', AWS_S3_BUCKET: '${AWS_S3_BUCKET}', AWS_REGION: '${AWS_REGION}', AWS_BANNER_PUBLIC_URL: '${AWS_BANNER_PUBLIC_URL}' }, depends_on: [events-db] }
+  ticket-service: { build: { context: ., dockerfile: ticket-service/Dockerfile }, environment: { DATABASE_URL: 'jdbc:postgresql://tickets-db:5432/tickets', JWT_SECRET: '${JWT_SECRET}', KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092' }, depends_on: [tickets-db,kafka,event-service] }
+  payment-service: { build: { context: ., dockerfile: payment-service/Dockerfile }, environment: { DATABASE_URL: 'jdbc:postgresql://payments-db:5432/payments', JWT_SECRET: '${JWT_SECRET}', KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092' }, depends_on: [payments-db,kafka] }
+  notification-service: { build: { context: ., dockerfile: notification-service/Dockerfile }, environment: { KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092' }, depends_on: [kafka] }
+  analytics-service: { build: { context: ., dockerfile: analytics-service/Dockerfile }, environment: { KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092' }, depends_on: [kafka] }
+  config-server: { build: { context: ., dockerfile: config-server/Dockerfile }, ports: ['8888:8888'] }
+  api-gateway: { build: { context: ., dockerfile: api-gateway/Dockerfile }, ports: ['8080:8080'], depends_on: [user-service,event-service,ticket-service,payment-service] }
+  web: { build: { context: ., dockerfile: web/Dockerfile }, ports: ['4200:80'], depends_on: [api-gateway] }

@@ -1,0 +1,9 @@
+server: { port: 8084 }
+spring:
+  config: { import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}" }
+  application: { name: payment-service }
+  datasource: { url: "${DATABASE_URL:jdbc:postgresql://localhost:5436/payments}", username: "${DATABASE_USER:postgres}", password: "${DATABASE_PASSWORD:postgres}" }
+  jpa: { hibernate: { ddl-auto: validate } }
+  kafka: { bootstrap-servers: "${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}", producer: { value-serializer: org.springframework.kafka.support.serializer.JsonSerializer } }
+management: { endpoints: { web: { exposure: { include: health,info,prometheus } } } }
+app: { jwt: { secret: "${JWT_SECRET:change-me-change-me-change-me-change-me}" } }
