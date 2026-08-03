@@ -7,7 +7,15 @@ NAMESPACE="pulse-tickets"
 
 terraform -chdir="$TF_DIR" init -input=false
 terraform -chdir="$TF_DIR" apply -auto-approve -input=false
-aws eks update-kubeconfig --region "$AWS_REGION" --name "$(terraform -chdir="$TF_DIR" output -raw eks_cluster_name)"
+CLUSTER_NAME="$(terraform -chdir="$TF_DIR" output -raw eks_cluster_name)"
+aws eks wait cluster-active --region "$AWS_REGION" --name "$CLUSTER_NAME"
+aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
+
+for attempt in {1..30}; do
+  kubectl auth can-i get pods --all-namespaces >/dev/null 2>&1 && break
+  sleep 10
+done
+kubectl auth can-i get pods --all-namespaces >/dev/null
 
 SECRET_ARN="$(terraform -chdir="$TF_DIR" output -raw deployment_secret_arn)"
 SECRET_JSON="$(aws secretsmanager get-secret-value --secret-id "$SECRET_ARN" --query SecretString --output text)"

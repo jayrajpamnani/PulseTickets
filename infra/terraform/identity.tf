@@ -58,7 +58,7 @@ resource "aws_eks_access_policy_association" "github_actions" {
 
 data "aws_iam_policy_document" "event_service_assume" {
   statement {
-    actions = ["sts:AssumeRole"]
+    actions = ["sts:AssumeRole", "sts:TagSession"]
     principals {
       type        = "Service"
       identifiers = ["pods.eks.amazonaws.com"]
