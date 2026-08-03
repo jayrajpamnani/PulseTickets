@@ -69,6 +69,8 @@ jobs:
       - name: Build frontend artifact
         run: npm ci && npm run build
         working-directory: web
+      - name: Build banner processor artifact
+        run: mvn --batch-mode -pl banner-processor -am clean package
       - name: Deploy EKS workloads and web edge
         run: |
           sudo apt-get update
