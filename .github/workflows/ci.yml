@@ -41,6 +41,9 @@ jobs:
     env:
       AWS_REGION: us-east-2
       IMAGE_TAG: sha-${{ github.sha }}
+      TF_VAR_aws_region: us-east-2
+      TF_VAR_project: pulse-tickets
+      TF_VAR_alert_email: jayrajpamnani1610@gmail.com
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
