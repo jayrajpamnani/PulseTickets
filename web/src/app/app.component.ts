@@ -24,8 +24,8 @@ export class AppComponent {
 
   login() {
     const credentials = { username: 'demo', email: 'demo@pulsetickets.local', password: 'DemoPass123' };
-    this.http.post('/api/auth/register', credentials).subscribe({
-      next: () => this.signInDemo(credentials),
+    this.http.post<any>('/api/auth/register', credentials).subscribe({
+      next: response => this.completeSignIn(response.token),
       error: response => {
         if (response.status === 409) this.signInDemo(credentials);
         else this.error.set('Demo sign-in is currently unavailable.');
@@ -35,13 +35,15 @@ export class AppComponent {
 
   private signInDemo(credentials: { username: string; email: string; password: string }) {
     this.http.post<any>('/api/auth/login', { username: credentials.username, password: credentials.password }).subscribe({
-      next: response => {
-        localStorage.setItem('token', response.token);
-        this.token.set(response.token);
-        this.error.set('');
-      },
+      next: response => this.completeSignIn(response.token),
       error: () => this.error.set('Demo sign-in is currently unavailable.')
     });
+  }
+
+  private completeSignIn(token: string) {
+    localStorage.setItem('token', token);
+    this.token.set(token);
+    this.error.set('');
   }
 
   reserve(event: Event) {
