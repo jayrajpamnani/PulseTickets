@@ -8,6 +8,18 @@ variable "github_repository" {
   default     = "jayrajpamnani/PulseTickets"
 }
 
+variable "github_repository_owner_id" {
+  description = "Immutable GitHub owner ID used in OIDC subjects."
+  type        = string
+  default     = "125007705"
+}
+
+variable "github_repository_id" {
+  description = "Immutable GitHub repository ID used in OIDC subjects."
+  type        = string
+  default     = "1321136199"
+}
+
 variable "admin_email" {
   description = "Bootstrap administrator email. The password is generated in Secrets Manager."
   type        = string
