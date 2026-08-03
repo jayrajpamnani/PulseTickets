@@ -56,7 +56,8 @@ jobs:
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
       - name: Build and push immutable service images
-        env: { ECR_REGISTRY: ${{ steps.ecr.outputs.registry }} }
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           for service in api-gateway user-service event-service ticket-service payment-service notification-service analytics-service config-server; do
             docker build -f "$service/Dockerfile" -t "$ECR_REGISTRY/pulse-tickets/$service:$IMAGE_TAG" .
