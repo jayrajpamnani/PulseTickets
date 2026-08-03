@@ -61,8 +61,13 @@ done
 [[ -n "${API_ORIGIN:-}" ]] || { echo "API gateway load balancer was not provisioned" >&2; exit 1; }
 
 terraform -chdir="$TF_DIR" apply -auto-approve -input=false -var="api_origin_domain=$API_ORIGIN"
+WEB_ORIGIN="$(terraform -chdir="$TF_DIR" output -raw frontend_url)"
+[[ -n "$WEB_ORIGIN" ]] || { echo "Frontend CloudFront URL was not provisioned" >&2; exit 1; }
+envsubst < "$ROOT/k8s/production.yaml" | kubectl apply -f -
+kubectl -n "$NAMESPACE" rollout restart deployment/api-gateway
+kubectl -n "$NAMESPACE" rollout status deployment/api-gateway --timeout=10m
 WEB_BUCKET="${BANNER_BUCKET/-event-banners-/-web-}"
 aws s3 sync "$ROOT/web/dist/event-ticketing-web/browser" "s3://$WEB_BUCKET" --delete
 DIST_ID="$(terraform -chdir="$TF_DIR" output -raw frontend_distribution_id)"
 aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths '/*' >/dev/null
-echo "Deployment complete: $(terraform -chdir="$TF_DIR" output -raw frontend_url)"
+echo "Deployment complete: $WEB_ORIGIN"
