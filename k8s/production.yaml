@@ -203,7 +203,10 @@ kind: Service
 metadata:
   name: api-gateway
   namespace: pulse-tickets
-  annotations: { service.beta.kubernetes.io/aws-load-balancer-type: external, service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing }
+  # Use the in-tree EKS service controller. The AWS Load Balancer Controller
+  # is not installed in this cluster, so the `external` target type leaves
+  # the Service without an address forever.
+  annotations: { service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing }
 spec: { selector: { app: api-gateway }, type: LoadBalancer, ports: [{ port: 80, targetPort: 8080 }] }
 ---
 apiVersion: autoscaling/v2
