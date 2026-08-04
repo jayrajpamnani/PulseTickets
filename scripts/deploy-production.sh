@@ -61,7 +61,7 @@ done
 [[ -n "${API_ORIGIN:-}" ]] || { echo "API gateway load balancer was not provisioned" >&2; exit 1; }
 
 terraform -chdir="$TF_DIR" apply -auto-approve -input=false -var="api_origin_domain=$API_ORIGIN"
-WEB_ORIGIN="$(terraform -chdir="$TF_DIR" output -raw frontend_url)"
+export WEB_ORIGIN="$(terraform -chdir="$TF_DIR" output -raw frontend_url)"
 [[ -n "$WEB_ORIGIN" ]] || { echo "Frontend CloudFront URL was not provisioned" >&2; exit 1; }
 envsubst < "$ROOT/k8s/production.yaml" | kubectl apply -f -
 kubectl -n "$NAMESPACE" rollout restart deployment/api-gateway
