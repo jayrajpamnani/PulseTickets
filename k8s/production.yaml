@@ -62,7 +62,7 @@ spec:
           image: ${ECR_REGISTRY}/pulse-tickets/user-service:${IMAGE_TAG}
           ports: [{ containerPort: 8081 }]
           envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
-          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${USERS_DB_ENDPOINT}:5432/users }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_USERS } } }]
+          env: [{ name: DATABASE_URL, value: "jdbc:postgresql://${USERS_DB_ENDPOINT}:5432/users" }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_USERS } } }]
           readinessProbe: { httpGet: { path: /actuator/health, port: 8081 }, initialDelaySeconds: 25 }
           livenessProbe: { httpGet: { path: /actuator/health, port: 8081 }, initialDelaySeconds: 45 }
           resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
@@ -87,7 +87,7 @@ spec:
           image: ${ECR_REGISTRY}/pulse-tickets/event-service:${IMAGE_TAG}
           ports: [{ containerPort: 8082 }]
           envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
-          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${EVENTS_DB_ENDPOINT}:5432/events }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_EVENTS } } }]
+          env: [{ name: DATABASE_URL, value: "jdbc:postgresql://${EVENTS_DB_ENDPOINT}:5432/events" }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_EVENTS } } }]
           readinessProbe: { httpGet: { path: /actuator/health, port: 8082 }, initialDelaySeconds: 25 }
           livenessProbe: { httpGet: { path: /actuator/health, port: 8082 }, initialDelaySeconds: 45 }
           resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
@@ -111,7 +111,7 @@ spec:
           image: ${ECR_REGISTRY}/pulse-tickets/ticket-service:${IMAGE_TAG}
           ports: [{ containerPort: 8083 }]
           envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
-          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${TICKETS_DB_ENDPOINT}:5432/tickets }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_TICKETS } } }]
+          env: [{ name: DATABASE_URL, value: "jdbc:postgresql://${TICKETS_DB_ENDPOINT}:5432/tickets" }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_TICKETS } } }]
           readinessProbe: { httpGet: { path: /actuator/health, port: 8083 }, initialDelaySeconds: 25 }
           livenessProbe: { httpGet: { path: /actuator/health, port: 8083 }, initialDelaySeconds: 45 }
           resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
@@ -135,7 +135,7 @@ spec:
           image: ${ECR_REGISTRY}/pulse-tickets/payment-service:${IMAGE_TAG}
           ports: [{ containerPort: 8084 }]
           envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
-          env: [{ name: DATABASE_URL, value: jdbc:postgresql://${PAYMENTS_DB_ENDPOINT}:5432/payments }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_PAYMENTS } } }]
+          env: [{ name: DATABASE_URL, value: "jdbc:postgresql://${PAYMENTS_DB_ENDPOINT}:5432/payments" }, { name: DATABASE_PASSWORD, valueFrom: { secretKeyRef: { name: platform-secrets, key: DATABASE_PASSWORD_PAYMENTS } } }]
           readinessProbe: { httpGet: { path: /actuator/health, port: 8084 }, initialDelaySeconds: 25 }
           livenessProbe: { httpGet: { path: /actuator/health, port: 8084 }, initialDelaySeconds: 45 }
           resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }
