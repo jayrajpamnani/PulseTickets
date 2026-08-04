@@ -14,10 +14,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check git whitespace and diff
+        run: git diff --check origin/main..HEAD || git diff --check || true
+      - name: Validate YAML configuration files
+        run: |
+          python3 -c "import yaml, glob; [list(yaml.safe_load_all(open(f))) for f in glob.glob('k8s/*.yaml') + glob.glob('monitoring/*.yml') + glob.glob('.github/workflows/*.yml')]"
+      - name: Lint Dockerfiles
+        run: |
+          for df in $(find . -name "Dockerfile" -not -path "*/node_modules/*"); do
+            echo "Linting $df..."
+            grep -q "^FROM" "$df" || (echo "Error: $df missing FROM instruction" && exit 1)
+          done
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '21', cache: maven }
       - uses: hashicorp/setup-terraform@v3
       - run: mvn --batch-mode verify
+      - name: Archive Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-test-reports
+          path: '**/target/surefire-reports/'
       - run: terraform -chdir=infra/terraform fmt -check -recursive
 
   frontend:

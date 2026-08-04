@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
@@ -40,6 +41,9 @@ public class EventClient {
     RestClientException last = null;
     for (int attempt = 1; attempt <= 3; attempt++) {
       try { T result = operation.get(); failures.set(0); return result; }
+      catch (HttpStatusCodeException ex) {
+        throw new ResponseStatusException(ex.getStatusCode(), ex.getResponseBodyAsString(), ex);
+      }
       catch (RestClientException ex) { last = ex; if (attempt < 3) try { Thread.sleep(100L * attempt); } catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); break; } }
     }
     if (failures.incrementAndGet() >= 5) openUntil = Instant.now().plusSeconds(30);

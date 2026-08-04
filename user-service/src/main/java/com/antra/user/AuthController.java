@@ -1,8 +1,45 @@
 package com.antra.user;
-import com.antra.platform.security.JwtService; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.http.*; import org.springframework.security.core.Authentication; import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; import org.springframework.web.bind.annotation.*;
-@RestController @RequestMapping("/api/auth") public class AuthController { private final UserRepository users; private final JwtService jwt; private final BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(); AuthController(UserRepository users,JwtService jwt){this.users=users;this.jwt=jwt;}
-  @PostMapping("/register") ResponseEntity<Token> register(@Valid @RequestBody Register r){if(users.existsByUsernameOrEmail(r.username(),r.email())) return ResponseEntity.status(409).build(); User u=users.save(new User(r.username(),r.email(),encoder.encode(r.password())));return ResponseEntity.status(201).body(new Token(jwt.issue(u.username,u.role)));}
-  @PostMapping("/login") ResponseEntity<Token> login(@Valid @RequestBody Login l){return users.findByUsername(l.username()).filter(u->encoder.matches(l.password(),u.passwordHash)).map(u->ResponseEntity.ok(new Token(jwt.issue(u.username,u.role)))).orElse(ResponseEntity.status(401).build());}
-  @GetMapping("/me") Profile me(Authentication a){User u=users.findByUsername(a.getName()).orElseThrow();return new Profile(u.id,u.username,u.email,u.role);}
-  record Register(@NotBlank String username,@NotBlank @Email String email,@NotBlank @Size(min=8) String password){} record Login(@NotBlank String username,@NotBlank String password){} record Token(String token){} record Profile(Long id,String username,String email,String role){}
+
+import com.antra.user.dto.LoginDTO;
+import com.antra.user.dto.ProfileDTO;
+import com.antra.user.dto.RegisterDTO;
+import com.antra.user.dto.TokenDTO;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+  private final UserService userService;
+
+  public AuthController(UserService userService) {
+    this.userService = userService;
+  }
+
+  @PostMapping("/register")
+  public ResponseEntity<TokenDTO> register(@Valid @RequestBody RegisterDTO r) {
+    return userService.register(r)
+        .map(token -> ResponseEntity.status(HttpStatus.CREATED).body(token))
+        .orElseGet(() -> ResponseEntity.status(HttpStatus.CONFLICT).build());
+  }
+
+  @PostMapping("/login")
+  public ResponseEntity<TokenDTO> login(@Valid @RequestBody LoginDTO l) {
+    return userService.login(l)
+        .map(ResponseEntity::ok)
+        .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+  }
+
+  @GetMapping("/me")
+  public ProfileDTO me(Authentication a) {
+    if (a == null || a.getName() == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated");
+    }
+    return userService.getProfileByUsername(a.getName())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+  }
 }

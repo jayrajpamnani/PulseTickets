@@ -1,0 +1,8 @@
+logging:
+  level:
+    root: WARN
+    com.antra: INFO
+    org.springframework: WARN
+spring:
+  jpa:
+    show-sql: false

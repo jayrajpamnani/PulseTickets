@@ -1,5 +1,6 @@
 package com.antra.event;
 
+import com.antra.event.dto.CreateEventDTO;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -21,6 +22,6 @@ class EventBootstrap {
   }
 
   private Event event(String title, String venue, int days, String price, int capacity, String description, String banner, Instant now) {
-    return new Event(new EventController.Create(title, venue, now.plus(days, ChronoUnit.DAYS), new BigDecimal(price), capacity, description, banner));
+    return new Event(new CreateEventDTO(title, venue, now.plus(days, ChronoUnit.DAYS), new BigDecimal(price), capacity, description, banner));
   }
 }
