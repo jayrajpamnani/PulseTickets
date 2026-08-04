@@ -1,5 +1,7 @@
 server: { port: 8086 }
 spring:
   config: { import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}" }
+  datasource: { url: "jdbc:h2:mem:analyticsdb;DB_CLOSE_DELAY=-1", driver-class-name: "org.h2.Driver", username: "sa", password: "" }
+  jpa: { hibernate: { ddl-auto: update } }
   kafka: { bootstrap-servers: "${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}", consumer: { auto-offset-reset: earliest }, listener: { ack-mode: record } }
 management: { endpoints: { web: { exposure: { include: health,info,prometheus } } } }
