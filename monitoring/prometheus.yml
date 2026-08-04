@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: event-ticketing-services
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - api-gateway:8080
+          - user-service:8081
+          - event-service:8082
+          - ticket-service:8083
+          - payment-service:8084
+          - notification-service:8085
+          - analytics-service:8086

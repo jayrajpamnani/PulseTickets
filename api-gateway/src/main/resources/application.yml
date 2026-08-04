@@ -14,3 +14,4 @@ spring:
         - { id: ticket, uri: "${TICKET_SERVICE_URL:http://ticket-service:8083}", predicates: [ Path=/api/reservations/** ] }
         - { id: payment, uri: "${PAYMENT_SERVICE_URL:http://payment-service:8084}", predicates: [ Path=/api/payments/** ] }
 management: { endpoints: { web: { exposure: { include: health,info,prometheus } } } }
+app: { jwt: { secret: "${JWT_SECRET:change-me-change-me-change-me-change-me}" } }

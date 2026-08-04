@@ -1,4 +1,8 @@
 services:
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    ports: ['9090:9090']
+    volumes: ['./monitoring:/etc/prometheus:ro']
   kafka:
     image: bitnami/kafka:3.8
     environment:
@@ -21,5 +25,5 @@ services:
   notification-service: { build: { context: ., dockerfile: notification-service/Dockerfile }, environment: { KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092' }, depends_on: [kafka] }
   analytics-service: { build: { context: ., dockerfile: analytics-service/Dockerfile }, environment: { KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092' }, depends_on: [kafka] }
   config-server: { build: { context: ., dockerfile: config-server/Dockerfile }, ports: ['8888:8888'] }
-  api-gateway: { build: { context: ., dockerfile: api-gateway/Dockerfile }, ports: ['8080:8080'], depends_on: [user-service,event-service,ticket-service,payment-service] }
+  api-gateway: { build: { context: ., dockerfile: api-gateway/Dockerfile }, ports: ['8080:8080'], environment: { JWT_SECRET: '${JWT_SECRET}', WEB_ORIGIN: 'http://localhost:4200' }, depends_on: [user-service,event-service,ticket-service,payment-service] }
   web: { build: { context: ., dockerfile: web/Dockerfile }, ports: ['4200:80'], depends_on: [api-gateway] }

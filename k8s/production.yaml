@@ -157,7 +157,7 @@ spec:
       containers:
         - name: notification-service
           image: ${ECR_REGISTRY}/pulse-tickets/notification-service:${IMAGE_TAG}
-          envFrom: [{ configMapRef: { name: platform-config } }]
+          envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
           resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { cpu: 500m, memory: 512Mi } }
 ---
 apiVersion: apps/v1
@@ -188,7 +188,7 @@ spec:
         - name: api-gateway
           image: ${ECR_REGISTRY}/pulse-tickets/api-gateway:${IMAGE_TAG}
           ports: [{ containerPort: 8080 }]
-          envFrom: [{ configMapRef: { name: platform-config } }]
+          envFrom: [{ configMapRef: { name: platform-config } }, { secretRef: { name: platform-secrets } }]
           readinessProbe: { httpGet: { path: /actuator/health, port: 8080 }, initialDelaySeconds: 20 }
           livenessProbe: { httpGet: { path: /actuator/health, port: 8080 }, initialDelaySeconds: 40 }
           resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: 1, memory: 1Gi } }

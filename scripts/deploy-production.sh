@@ -5,6 +5,14 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TF_DIR="$ROOT/infra/terraform"
 NAMESPACE="pulse-tickets"
 
+rollback() {
+  echo "Deployment failed; attempting rollback of changed workloads" >&2
+  for deployment in api-gateway user-service event-service ticket-service payment-service notification-service analytics-service config-server; do
+    kubectl -n "$NAMESPACE" rollout undo "deployment/$deployment" >/dev/null 2>&1 || true
+  done
+}
+trap rollback ERR
+
 terraform -chdir="$TF_DIR" init -input=false
 CLUSTER_NAME="$(terraform -chdir="$TF_DIR" output -raw eks_cluster_name 2>/dev/null || true)"
 API_ORIGIN=""
@@ -36,6 +44,7 @@ export PAYMENTS_DB_ENDPOINT="$(jq -r '.payments' <<<"$DATABASES")"
 export KAFKA_BOOTSTRAP_SERVERS="$(terraform -chdir="$TF_DIR" output -raw kafka_bootstrap_servers)"
 export BANNER_BUCKET="$(terraform -chdir="$TF_DIR" output -raw banner_bucket)"
 export BANNER_CDN_URL="$(terraform -chdir="$TF_DIR" output -raw banner_cdn_url)"
+export WEB_ORIGIN="$(terraform -chdir="$TF_DIR" output -raw frontend_url)"
 export ECR_REGISTRY="$(terraform -chdir="$TF_DIR" output -json ecr_repository_urls | jq -r '.["api-gateway"]' | cut -d/ -f1)"
 export IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG must be a pushed immutable image tag}"
 
