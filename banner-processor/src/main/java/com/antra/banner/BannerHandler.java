@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.sns.SnsClient;
 public class BannerHandler implements RequestHandler<Map<String, Object>, String> {
   @Override @SuppressWarnings("unchecked")
   public String handleRequest(Map<String, Object> event, Context context) {
-    Map<String, Object> record = (Map<String, Object>) ((List<?>) event.get("Records")).getFirst();
+    Map<String, Object> record = (Map<String, Object>) ((List<?>) event.get("Records")).get(0);
     Map<String, Object> s3 = (Map<String, Object>) record.get("s3");
     String key = String.valueOf(((Map<?, ?>) s3.get("object")).get("key"));
     String bucket = String.valueOf(((Map<?, ?>) s3.get("bucket")).get("name"));
