@@ -6,7 +6,16 @@ TF_DIR="$ROOT/infra/terraform"
 NAMESPACE="pulse-tickets"
 
 terraform -chdir="$TF_DIR" init -input=false
-terraform -chdir="$TF_DIR" apply -auto-approve -input=false
+CLUSTER_NAME="$(terraform -chdir="$TF_DIR" output -raw eks_cluster_name 2>/dev/null || true)"
+API_ORIGIN=""
+if [[ -n "$CLUSTER_NAME" ]] && aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME" >/dev/null 2>&1; then
+  API_ORIGIN="$(kubectl -n "$NAMESPACE" get service api-gateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)"
+fi
+if [[ -n "$API_ORIGIN" ]]; then
+  terraform -chdir="$TF_DIR" apply -auto-approve -input=false -var="api_origin_domain=$API_ORIGIN"
+else
+  terraform -chdir="$TF_DIR" apply -auto-approve -input=false
+fi
 CLUSTER_NAME="$(terraform -chdir="$TF_DIR" output -raw eks_cluster_name)"
 aws eks wait cluster-active --region "$AWS_REGION" --name "$CLUSTER_NAME"
 aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
